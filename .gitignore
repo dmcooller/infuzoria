@@ -1,0 +1,9 @@
+icons/
+__pycache__/
+.vs/
+.vscode/*
+!.vscode/settings.json
+env/
+venv/
+.venv/
+settings.ini
