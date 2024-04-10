@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 
 from services.diameter import find_microscope_ocular_diameter
 from ui.design import Ui_MainWindow
-from utils import try_float
+from utils import extract_zoom_from_filename, try_float
 
 
 class ImageViewer(QGraphicsView):
@@ -143,6 +143,7 @@ class ImageViewer(QGraphicsView):
         self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
         self.mainWindow.statusbar.showMessage(f"Image loaded: {image_path}")
         self.trySetFovPx(image_path)
+        self._trySetZoomFromFileName(image_path)
         self.setFocus()
 
     def addPoint(self, pos):
@@ -345,3 +346,10 @@ class ImageViewer(QGraphicsView):
             QPen(self.lineColor, self.lineHeight),
         )
         self.fovCircle = circle
+
+    def _trySetZoomFromFileName(self, filename: str):
+        zoom = extract_zoom_from_filename(filename)
+        if zoom:
+            index = self.mainWindow.comboBoxDeviceZoom.findText(zoom)
+            if index != -1:
+                self.mainWindow.comboBoxDeviceZoom.setCurrentIndex(index)
