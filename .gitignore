@@ -8,3 +8,4 @@ venv/
 .venv/
 test_images/
 settings.ini
+devices.ini

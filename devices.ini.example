@@ -1,0 +1,13 @@
+[Sigeta MB-304]
+zoom_40x = 4000
+zoom_64x = 3200
+zoom_100x = 1800
+zoom_160x = 1300
+zoom_400x = 450
+zoom_640x = 320
+zoom_1000x = 180
+zoom_1600x = 130
+
+[Device2]
+zoom_10x = 5110
+zoom_20x = 4500

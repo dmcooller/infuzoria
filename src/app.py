@@ -3,8 +3,9 @@ import sys
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QColor, QDoubleValidator, QScreen
-from PySide6.QtWidgets import QApplication, QColorDialog, QFileDialog
+from PySide6.QtWidgets import QApplication, QColorDialog, QFileDialog, QMessageBox
 
+from devices import Devices
 from image_viewer.image_viewer import ImageViewer
 from settings import settings
 from ui.design import Ui_MainWindow
@@ -26,6 +27,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.imageViewer = ImageViewer(self)
         self.setupImageViewer()
 
+        self.devices = self.loadDevices()
+
         self.pBtnSaveImg.clicked.connect(self.saveImage)
         self.pBtnLoadImg.clicked.connect(self.loadImage)
         self.pBtnChgLineColor.clicked.connect(self.changeLineColor)
@@ -36,6 +39,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.sBoxTextSize.valueChanged.connect(self.changeTextSize)
         self.toolBtnSetFovPx.setCheckable(True)
         self.toolBtnSetFovPx.clicked.connect(lambda: self.imageViewer.setPovMode(self.toolBtnSetFovPx.isChecked()))
+        if self.devices:
+            self.comboBoxDeviceModel.currentIndexChanged.connect(self.deviceModelChanged)
+            self.comboBoxDeviceZoom.currentIndexChanged.connect(self.devices.updateFovUmValue)
 
         doubleValidator = QDoubleValidator(0.0, float("inf"), 2)
         self.lineEditFovPx.setValidator(doubleValidator)
@@ -116,6 +122,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.checkBoxSavePoints.setChecked(self.settings.iw_save_points)
         self.checkBoxSaveLines.setChecked(self.settings.iw_save_lines)
         self.checkBoxSaveDistance.setChecked(self.settings.iw_save_distance)
+        self.checkBoxAutoFovPx.setChecked(self.settings.iw_auto_diameter)
+
+    def loadDevices(self) -> Devices | None:
+        lastDevice = self.settings.devices_last_device
+        try:
+            return Devices(self, lastDevice=lastDevice)
+        except FileNotFoundError:
+            QMessageBox.warning(
+                self, "Error", "Failed to load file devices.ini. You can specify FOV (μm) manually.", QMessageBox.Ok
+            )
+            return None
+
+    def deviceModelChanged(self):
+        self.devices.updateZoomOptions()
+        self.settings.devices_last_device = self.comboBoxDeviceModel.currentText()
 
 
 app = QtWidgets.QApplication(sys.argv)
