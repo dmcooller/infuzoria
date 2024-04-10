@@ -36,17 +36,18 @@ class ImageViewer(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         self.setDragMode(QGraphicsView.NoDrag)
-        self._isPanning = False
-        self._panStartX = 0
-        self._panStartY = 0
-        self._spacePressed = False
-        self._pov_mode = False
+        self._isPanning: bool = False
+        self._panStartX: int = 0
+        self._panStartY: int = 0
+        self._spacePressed: bool = False
+        self._pov_mode: bool = False
 
         # Keep track of points, lines, distances, and distance texts
-        self.points = []
-        self.lines = []
-        self.distances = []
-        self.distanceTexts = []
+        self.points: list = []
+        self.lines: list = []
+        self.distances: list = []
+        self.distanceTexts: list = []
+        self.fovCircle = None
 
         self.totalDistance = 0  # Sum of all distances
 
@@ -54,12 +55,12 @@ class ImageViewer(QGraphicsView):
         self.pointColor = QColor("red")
         self.lineColor = QColor("green")
         self.textColor = QColor("black")
-        self.pointSize = 11
-        self.lineHeight = 7
-        self.textSize = 12
+        self.pointSize: int = 11
+        self.lineHeight: int = 7
+        self.textSize: int = 12
 
-        self.undoStack = []
-        self.redoStack = []
+        self.undoStack: list = []
+        self.redoStack: list = []
 
         self.pixmap_item = None  # Image item
 
@@ -134,7 +135,7 @@ class ImageViewer(QGraphicsView):
         else:
             self.mainWindow.statusbar.showMessage("POV mode enabled")
 
-    def setNewImage(self, image_path):
+    def setNewImage(self, image_path: str):
         self.clear(remove_image=True)
         self.pixmap_item = QGraphicsPixmapItem(QPixmap(image_path))
         self.scene.addItem(self.pixmap_item)
@@ -240,8 +241,9 @@ class ImageViewer(QGraphicsView):
                     self._setTotalDistanceText(self.totalDistance)
             self.undoStack.append(action)
 
-    def saveImageWithAnnotations(self, savePath):
+    def saveImageWithAnnotations(self, savePath: str):
         # Temporarily remove items not to be saved if necessary
+        self.scene.removeItem(self.fovCircle)
         if not self.mainWindow.checkBoxSavePoints.isChecked():
             for point in self.points:
                 self.scene.removeItem(point)
@@ -262,6 +264,7 @@ class ImageViewer(QGraphicsView):
         img.save(savePath)
 
         # Add back items removed for saving
+        self.scene.addItem(self.fovCircle)
         if not self.mainWindow.checkBoxSavePoints.isChecked():
             for point in self.points:
                 self.scene.addItem(point)
@@ -272,7 +275,7 @@ class ImageViewer(QGraphicsView):
             for distanceText in self.distanceTexts:
                 self.scene.addItem(distanceText)
 
-    def clear(self, remove_image=False):
+    def clear(self, remove_image: bool = False):
         if remove_image:
             self.pixmap_item = None
             self.scene.clear()
@@ -290,7 +293,7 @@ class ImageViewer(QGraphicsView):
         self.totalDistance = 0
         self._resetTotalDistanceText()
 
-    def trySetFovPx(self, image_path):
+    def trySetFovPx(self, image_path: str):
         if self.mainWindow.checkBoxAutoFovPx.isChecked() and not self._pov_mode:
             try:
                 result = find_microscope_ocular_diameter(image_path)
@@ -341,4 +344,4 @@ class ImageViewer(QGraphicsView):
             # Use the same line color and height as the lines
             QPen(self.lineColor, self.lineHeight),
         )
-        # self.undoStack.append(("add", circle))
+        self.fovCircle = circle
