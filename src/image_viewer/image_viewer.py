@@ -1,9 +1,25 @@
 import math
 
 from PySide6.QtCore import QPointF, Qt
-from PySide6.QtGui import QColor, QFont, QImage, QKeyEvent, QMouseEvent, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsTextItem, QGraphicsView
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QImage,
+    QKeyEvent,
+    QMouseEvent,
+    QPainter,
+    QPen,
+    QPixmap,
+)
+from PySide6.QtWidgets import (
+    QGraphicsPixmapItem,
+    QGraphicsScene,
+    QGraphicsTextItem,
+    QGraphicsView,
+    QMessageBox,
+)
 
+from services.diameter import find_microscope_ocular_diameter
 from ui.design import Ui_MainWindow
 from utils import try_float
 
@@ -119,12 +135,13 @@ class ImageViewer(QGraphicsView):
             self.mainWindow.statusbar.showMessage("POV mode enabled")
 
     def setNewImage(self, image_path):
-        self.clear(remove_image=False)
+        self.clear(remove_image=True)
         self.pixmap_item = QGraphicsPixmapItem(QPixmap(image_path))
         self.scene.addItem(self.pixmap_item)
         self.setScene(self.scene)
         self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
         self.mainWindow.statusbar.showMessage(f"Image loaded: {image_path}")
+        self.trySetFovPx(image_path)
         self.setFocus()
 
     def addPoint(self, pos):
@@ -161,7 +178,7 @@ class ImageViewer(QGraphicsView):
         if self._pov_mode:
             # For POV mode, calculate distance in pixels
             distance = self._calcDistancePx(lastPoint, secondLastPoint)
-            self.mainWindow.lineEditFovPx.setText(f"{distance:.2f}")
+            self._setlineEditFovPxText(distance)
         else:
             # For normal mode, calculate distance in micrometers
             distance = self._calcDistanceUm(lastPoint, secondLastPoint)
@@ -273,6 +290,24 @@ class ImageViewer(QGraphicsView):
         self.totalDistance = 0
         self._resetTotalDistanceText()
 
+    def trySetFovPx(self, image_path):
+        if self.mainWindow.checkBoxAutoFovPx.isChecked() and not self._pov_mode:
+            try:
+                result = find_microscope_ocular_diameter(image_path)
+                if result:
+                    diameter, (x, y) = result
+                    self._setlineEditFovPxText(diameter)
+                    self._drawFovCircle(x, y, diameter)
+                else:
+                    self._setlineEditFovPxText()
+                    QMessageBox.information(
+                        self,
+                        "Info",
+                        "Could not find FOV (px) automatically. You can set it manually.",
+                    )
+            except Exception as e:
+                QMessageBox.warning(self, "Error", str(e))
+
     def _calcDistanceUm(self, point1: QPointF, point2: QPointF) -> float:
         """Calculate distance between two points in micrometers (μm)."""
         fov_um = float(self.mainWindow.lineEditFovUm.text())
@@ -288,8 +323,22 @@ class ImageViewer(QGraphicsView):
         """Calculate distance between two points in pixels."""
         return math.hypot(point1.x() - point2.x(), point1.y() - point2.y())
 
-    def _setTotalDistanceText(self, distance: float):
+    def _setTotalDistanceText(self, distance: float = 0):
         self.mainWindow.lineEditTotalDistance.setText(f"{distance:.2f}")
+
+    def _setlineEditFovPxText(self, distance: float = 0):
+        self.mainWindow.lineEditFovPx.setText(f"{distance:.2f}")
 
     def _resetTotalDistanceText(self):
         self.mainWindow.lineEditTotalDistance.setText("0.00")
+
+    def _drawFovCircle(self, x: int, y: int, diameter: float):
+        circle = self.scene.addEllipse(
+            x - diameter / 2,
+            y - diameter / 2,
+            diameter,
+            diameter,
+            # Use the same line color and height as the lines
+            QPen(self.lineColor, self.lineHeight),
+        )
+        # self.undoStack.append(("add", circle))

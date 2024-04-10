@@ -19,6 +19,7 @@ class AppSettings:
         self.iw_save_points: bool = True
         self.iw_save_lines: bool = True
         self.iw_save_distance: bool = True
+        self.iw_auto_diameter: bool = True
 
         self._load_and_validate()
 
@@ -39,6 +40,7 @@ class AppSettings:
         self.iw_save_points = config.getboolean("ImageViewer", "save_points", fallback=self.iw_save_points)
         self.iw_save_lines = config.getboolean("ImageViewer", "save_lines", fallback=self.iw_save_lines)
         self.iw_save_distance = config.getboolean("ImageViewer", "save_distance", fallback=self.iw_save_distance)
+        self.iw_auto_diameter = config.getboolean("ImageViewer", "auto_diameter", fallback=self.iw_auto_diameter)
 
     def _param_exists(self, param: str) -> bool:
         config = configparser.ConfigParser()
@@ -75,6 +77,7 @@ class AppSettings:
             "save_points": self.iw_save_points,
             "save_lines": self.iw_save_lines,
             "save_distance": self.iw_save_distance,
+            "auto_diameter": self.iw_auto_diameter,
         }
 
         with open(self.file_path, "w", encoding="utf-8") as configfile:
@@ -88,7 +91,7 @@ class AppSettings:
             f"iw_point_size={self.iw_point_size}, iw_text_size={self.iw_text_size}, "
             f"iw_text_color={self.iw_text_color}, "
             f"iw_save_points={self.iw_save_points}, iw_save_lines={self.iw_save_lines}, "
-            f"iw_save_distance={self.iw_save_distance})"
+            f"iw_save_distance={self.iw_save_distance}, iw_auto_diameter={self.iw_auto_diameter})"
         )
 
 
