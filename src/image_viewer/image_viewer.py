@@ -114,8 +114,12 @@ class ImageViewer(QGraphicsView):
             self._spacePressed = True
             event.accept()
         elif event.key() == Qt.Key_Z and event.modifiers() & Qt.ControlModifier:
+            # Undo twice to remove last point and line
+            self.undo()
             self.undo()
         elif event.key() == Qt.Key_Y and event.modifiers() & Qt.ControlModifier:
+            # Redo twice to add back last point and line
+            self.redo()
             self.redo()
         else:
             super().keyPressEvent(event)
@@ -162,7 +166,7 @@ class ImageViewer(QGraphicsView):
                 # Draw line and calculate distance if it's not the first point
                 self.drawLineAndCalculateDistance()
             # Record this action
-            self.undoStack.append(("add", pointItem))
+            self.undoStack.append(("point", pointItem))
 
     def drawLineAndCalculateDistance(self):
         lastPoint = self.points[-1].rect().center()
@@ -217,7 +221,7 @@ class ImageViewer(QGraphicsView):
     def undo(self):
         if self.undoStack:
             action = self.undoStack.pop()
-            if action[0] == "add":
+            if action[0] == "point":
                 # Undo add point
                 self.scene.removeItem(action[1])
                 self.points.remove(action[1])
@@ -235,7 +239,7 @@ class ImageViewer(QGraphicsView):
     def redo(self):
         if self.redoStack:
             action = self.redoStack.pop()
-            if action[0] == "add":
+            if action[0] == "point":
                 # Redo add point
                 self.scene.addItem(action[1])
                 self.points.append(action[1])
@@ -336,6 +340,7 @@ class ImageViewer(QGraphicsView):
         return math.hypot(point1.x() - point2.x(), point1.y() - point2.y())
 
     def _setTotalDistanceText(self, distance: float = 0):
+        distance = max(0, distance)
         self.mainWindow.lineEditTotalDistance.setText(f"{distance:.2f}")
 
     def _setlineEditFovPxText(self, distance: float = 0):
