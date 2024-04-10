@@ -189,22 +189,30 @@ class ImageViewer(QGraphicsView):
             self._setTotalDistanceText(self.totalDistance)
         self.distances.append(distance)
 
-        # Display distance text
-        midPoint = QPointF(
-            (lastPoint.x() + secondLastPoint.x()) / 2,
-            (lastPoint.y() + secondLastPoint.y()) / 2,
-        )
+        distanceText = self._drawDistanceText(distance, lastPoint, secondLastPoint)
+
+        # Record this action with all elements that needed to be removed for undo
+        self.undoStack.append(("line", lineItem, distanceText, distance))
+
+    def _drawDistanceText(self, distance: float, lastPoint: QPointF, secondLastPoint: QPointF) -> QGraphicsTextItem:
+        """Draw text showing the distance between two points."""
+
         distanceText = QGraphicsTextItem(f"{distance:.2f}")
-        distanceText.setPos(midPoint)
+
         font = QFont()
         font.setPointSize(self.textSize)
         distanceText.setFont(font)
         distanceText.setDefaultTextColor(self.textColor)
+
+        midPoint = QPointF((lastPoint.x() + secondLastPoint.x()) / 2, (lastPoint.y() + secondLastPoint.y()) / 2)
+        # center distance text based on text width
+        midPoint.setX(midPoint.x() - distanceText.boundingRect().width() / 2)
+        distanceText.setPos(midPoint)
+
         self.scene.addItem(distanceText)
         self.distanceTexts.append(distanceText)
 
-        # Record this action with all elements that needed to be removed for undo
-        self.undoStack.append(("line", lineItem, distanceText, distance))
+        return distanceText
 
     def undo(self):
         if self.undoStack:
