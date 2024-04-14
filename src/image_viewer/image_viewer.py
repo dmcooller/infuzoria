@@ -146,8 +146,8 @@ class ImageViewer(QGraphicsView):
         self.setScene(self.scene)
         self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
         self.mainWindow.statusbar.showMessage(f"Image loaded: {image_path}")
-        self.trySetFovPx(image_path)
-        self._trySetZoomFromFileName(image_path)
+        self.tryAutoSetFovPx(image_path)
+        self._tryAutoSetZoomFromFileName(image_path)
         self.setFocus()
 
     def addPoint(self, pos):
@@ -185,12 +185,12 @@ class ImageViewer(QGraphicsView):
             # For POV mode, calculate distance in pixels
             distance = self._calcDistancePx(lastPoint, secondLastPoint)
             self._setlineEditFovPxText(distance)
+            self._drawFovCircle(lastPoint.x() - distance / 2, lastPoint.y(), distance)
         else:
             # For normal mode, calculate distance in micrometers
             distance = self._calcDistanceUm(lastPoint, secondLastPoint)
-            self.totalDistance += distance
             # Update total distance in the UI
-            self._setTotalDistanceText(self.totalDistance)
+            self._setTotalDistance(distance)
         self.distances.append(distance)
 
         distanceText = self._drawDistanceText(distance, lastPoint, secondLastPoint)
@@ -230,10 +230,13 @@ class ImageViewer(QGraphicsView):
                 self.scene.removeItem(action[1])  # Remove line
                 self.scene.removeItem(action[2])  # Remove distance text
                 self.lines.remove(action[1])
+                self.distanceTexts.remove(action[2])
                 self.distances.remove(action[3])
                 if not self._pov_mode:
-                    self.totalDistance -= action[3]
-                    self._setTotalDistanceText(self.totalDistance)
+                    self._setTotalDistance(self.totalDistance - action[3])
+                elif self.fovCircle:
+                    self.scene.removeItem(self.fovCircle)
+                    self.fovCircle = None
             self.redoStack.append(action)
 
     def redo(self):
@@ -248,10 +251,10 @@ class ImageViewer(QGraphicsView):
                 self.scene.addItem(action[1])  # Add line
                 self.scene.addItem(action[2])  # Add distance text
                 self.lines.append(action[1])
+                self.distanceTexts.append(action[2])
                 self.distances.append(action[3])
                 if not self._pov_mode:
-                    self.totalDistance += action[3]
-                    self._setTotalDistanceText(self.totalDistance)
+                    self._setTotalDistance(self.totalDistance + action[3])
             self.undoStack.append(action)
 
     def saveImageWithAnnotations(self, savePath: str):
@@ -303,10 +306,11 @@ class ImageViewer(QGraphicsView):
         self.lines.clear()
         self.distances.clear()
         self.distanceTexts.clear()
-        self.totalDistance = 0
-        self._resetTotalDistanceText()
+        self._setTotalDistance()
+        self.undoStack.clear()
+        self.redoStack.clear()
 
-    def trySetFovPx(self, image_path: str):
+    def tryAutoSetFovPx(self, image_path: str):
         if self.mainWindow.checkBoxAutoFovPx.isChecked() and not self._pov_mode:
             try:
                 result = find_microscope_ocular_diameter(image_path)
@@ -339,17 +343,19 @@ class ImageViewer(QGraphicsView):
         """Calculate distance between two points in pixels."""
         return math.hypot(point1.x() - point2.x(), point1.y() - point2.y())
 
-    def _setTotalDistanceText(self, distance: float = 0):
+    def _setTotalDistance(self, distance: float = 0):
         distance = max(0, distance)
+        self.totalDistance = distance
         self.mainWindow.lineEditTotalDistance.setText(f"{distance:.2f}")
 
     def _setlineEditFovPxText(self, distance: float = 0):
         self.mainWindow.lineEditFovPx.setText(f"{distance:.2f}")
 
-    def _resetTotalDistanceText(self):
-        self.mainWindow.lineEditTotalDistance.setText("0.00")
-
     def _drawFovCircle(self, x: int, y: int, diameter: float):
+        if self.fovCircle:
+            # Remove previous circle if it exists
+            self.scene.removeItem(self.fovCircle)
+
         circle = self.scene.addEllipse(
             x - diameter / 2,
             y - diameter / 2,
@@ -360,7 +366,7 @@ class ImageViewer(QGraphicsView):
         )
         self.fovCircle = circle
 
-    def _trySetZoomFromFileName(self, filename: str):
+    def _tryAutoSetZoomFromFileName(self, filename: str):
         zoom = extract_zoom_from_filename(filename)
         if zoom:
             index = self.mainWindow.comboBoxDeviceZoom.findText(zoom)
