@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
-from services.diameter import find_microscope_ocular_diameter
+from services.image_service import crop_image, find_microscope_ocular_diameter
 from ui.design import Ui_MainWindow
 from utils import extract_zoom_from_filename, try_float
 
@@ -145,10 +145,10 @@ class ImageViewer(QGraphicsView):
         self.scene.addItem(self.pixmap_item)
         self.setScene(self.scene)
         self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
-        self.mainWindow.statusbar.showMessage(f"Image loaded: {image_path}")
-        self.tryAutoSetFovPx(image_path)
+        self.imgAutoHelpers()
         self._tryAutoSetZoomFromFileName(image_path)
         self.setFocus()
+        self.mainWindow.statusbar.showMessage(f"Image loaded: {image_path}")
 
     def addPoint(self, pos):
         if not self._spacePressed:
@@ -302,6 +302,7 @@ class ImageViewer(QGraphicsView):
                 self.scene.removeItem(line)
             for distanceText in self.distanceTexts:
                 self.scene.removeItem(distanceText)
+        self.fovCircle = None
         self.points.clear()
         self.lines.clear()
         self.distances.clear()
@@ -310,14 +311,23 @@ class ImageViewer(QGraphicsView):
         self.undoStack.clear()
         self.redoStack.clear()
 
-    def tryAutoSetFovPx(self, image_path: str):
-        if self.mainWindow.checkBoxAutoFovPx.isChecked() and not self._pov_mode:
+    def imgAutoHelpers(self):
+        """Automatically set FOV (px) and crop image if enabled."""
+        # Auto set FOV (px) if enabled or auto crop if enabled
+        if (
+            self.mainWindow.checkBoxAutoFovPx.isChecked() or self.mainWindow.checkBoxAutoCrop.isChecked()
+        ) and not self._pov_mode:
+            if not self.pixmap_item:
+                QMessageBox.warning(self, "Error", "Please load an image first.")
             try:
-                result = find_microscope_ocular_diameter(image_path)
+                result = find_microscope_ocular_diameter(self.pixmap_item.pixmap())
                 if result:
                     diameter, (x, y) = result
-                    self._setlineEditFovPxText(diameter)
-                    self._drawFovCircle(x, y, diameter)
+                    crop_x, crop_y = 0, 0
+                    if self.mainWindow.checkBoxAutoCrop.isChecked():
+                        crop_x, crop_y = self._tryAutoCrop(x, y, diameter)
+                    if self.mainWindow.checkBoxAutoFovPx.isChecked():
+                        self._tryAutoSetFovPx(diameter, x - crop_x, y - crop_y)
                 else:
                     self._setlineEditFovPxText()
                     QMessageBox.information(
@@ -327,6 +337,22 @@ class ImageViewer(QGraphicsView):
                     )
             except Exception as e:
                 QMessageBox.warning(self, "Error", str(e))
+
+    def _tryAutoSetFovPx(self, diameter: float = 0, x: int = 0, y: int = 0):
+        """Set field of view in pixels and draw circle."""
+        self._setlineEditFovPxText(diameter)
+        self._drawFovCircle(x, y, diameter)
+
+    def _tryAutoCrop(self, x: int, y: int, diameter: float):
+        """Crop image around the ocular lens."""
+        cropImage, crop_x, crop_y = crop_image(self.pixmap_item.pixmap(), QPointF(x, y), diameter)
+
+        # Remove previous image and add new cropped image
+        self.scene.removeItem(self.pixmap_item)
+        self.pixmap_item = QGraphicsPixmapItem(cropImage)
+        self.scene.addItem(self.pixmap_item)
+
+        return crop_x, crop_y
 
     def _calcDistanceUm(self, point1: QPointF, point2: QPointF) -> float:
         """Calculate distance between two points in micrometers (μm)."""

@@ -20,6 +20,7 @@ class AppSettings:
         self.iw_save_lines: bool = True
         self.iw_save_distance: bool = True
         self.iw_auto_diameter: bool = True
+        self.iw_auto_crop: bool = True
         self.devices_last_device: str = ""
 
         self._load_and_validate()
@@ -42,6 +43,7 @@ class AppSettings:
         self.iw_save_lines = config.getboolean("ImageViewer", "save_lines", fallback=self.iw_save_lines)
         self.iw_save_distance = config.getboolean("ImageViewer", "save_distance", fallback=self.iw_save_distance)
         self.iw_auto_diameter = config.getboolean("ImageViewer", "auto_diameter", fallback=self.iw_auto_diameter)
+        self.iw_auto_crop = config.getboolean("ImageViewer", "auto_crop", fallback=self.iw_auto_crop)
 
         self.devices_last_device = config.get("Devices", "last_device", fallback=self.devices_last_device)
 
@@ -81,6 +83,7 @@ class AppSettings:
             "save_lines": self.iw_save_lines,
             "save_distance": self.iw_save_distance,
             "auto_diameter": self.iw_auto_diameter,
+            "auto_crop": self.iw_auto_crop,
         }
 
         config["Devices"] = {"last_device": self.devices_last_device}
@@ -97,6 +100,7 @@ class AppSettings:
             f"iw_text_color={self.iw_text_color}, "
             f"iw_save_points={self.iw_save_points}, iw_save_lines={self.iw_save_lines}, "
             f"iw_save_distance={self.iw_save_distance}, iw_auto_diameter={self.iw_auto_diameter}, "
+            f"iw_auto_crop={self.iw_auto_crop}, "
             f"devices_last_device={self.devices_last_device})"
         )
 

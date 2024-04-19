@@ -123,6 +123,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.checkBoxSaveLines.setChecked(self.settings.iw_save_lines)
         self.checkBoxSaveDistance.setChecked(self.settings.iw_save_distance)
         self.checkBoxAutoFovPx.setChecked(self.settings.iw_auto_diameter)
+        self.checkBoxAutoCrop.setChecked(self.settings.iw_auto_crop)
 
     def loadDevices(self) -> Devices | None:
         lastDevice = self.settings.devices_last_device
