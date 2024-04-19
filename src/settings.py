@@ -29,36 +29,46 @@ class AppSettings:
         config = configparser.ConfigParser()
         config.read(self.file_path)
 
-        self.g_last_path = config.get("General", "last_path", fallback=self.g_last_path)
-        self.g_window_height = config.getint("General", "window_height", fallback=self.g_window_height)
-        self.g_window_width = config.getint("General", "window_width", fallback=self.g_window_width)
+        self.g_last_path = config.get("General", "g_last_path", fallback=self.g_last_path)
+        self.g_window_height = config.getint("General", "g_window_height", fallback=self.g_window_height)
+        self.g_window_width = config.getint("General", "g_window_width", fallback=self.g_window_width)
 
-        self.iw_line_color = config.get("ImageViewer", "line_color", fallback=self.iw_line_color)
-        self.iw_point_color = config.get("ImageViewer", "point_color", fallback=self.iw_point_color)
-        self.iw_text_color = config.get("ImageViewer", "text_color", fallback=self.iw_text_color)
-        self.iw_line_height = config.getint("ImageViewer", "line_height", fallback=self.iw_line_height)
-        self.iw_point_size = config.getint("ImageViewer", "point_size", fallback=self.iw_point_size)
-        self.iw_text_size = config.getint("ImageViewer", "text_size", fallback=self.iw_text_size)
-        self.iw_save_points = config.getboolean("ImageViewer", "save_points", fallback=self.iw_save_points)
-        self.iw_save_lines = config.getboolean("ImageViewer", "save_lines", fallback=self.iw_save_lines)
-        self.iw_save_distance = config.getboolean("ImageViewer", "save_distance", fallback=self.iw_save_distance)
-        self.iw_auto_diameter = config.getboolean("ImageViewer", "auto_diameter", fallback=self.iw_auto_diameter)
-        self.iw_auto_crop = config.getboolean("ImageViewer", "auto_crop", fallback=self.iw_auto_crop)
+        self.iw_line_color = config.get("ImageViewer", "iw_line_color", fallback=self.iw_line_color)
+        self.iw_point_color = config.get("ImageViewer", "iw_point_color", fallback=self.iw_point_color)
+        self.iw_text_color = config.get("ImageViewer", "iw_text_color", fallback=self.iw_text_color)
+        self.iw_line_height = config.getint("ImageViewer", "iw_line_height", fallback=self.iw_line_height)
+        self.iw_point_size = config.getint("ImageViewer", "iw_point_size", fallback=self.iw_point_size)
+        self.iw_text_size = config.getint("ImageViewer", "iw_text_size", fallback=self.iw_text_size)
+        self.iw_save_points = config.getboolean("ImageViewer", "iw_save_points", fallback=self.iw_save_points)
+        self.iw_save_lines = config.getboolean("ImageViewer", "iw_save_lines", fallback=self.iw_save_lines)
+        self.iw_save_distance = config.getboolean("ImageViewer", "iw_save_distance", fallback=self.iw_save_distance)
+        self.iw_auto_diameter = config.getboolean("ImageViewer", "iw_auto_diameter", fallback=self.iw_auto_diameter)
+        self.iw_auto_crop = config.getboolean("ImageViewer", "iw_auto_crop", fallback=self.iw_auto_crop)
 
-        self.devices_last_device = config.get("Devices", "last_device", fallback=self.devices_last_device)
+        self.devices_last_device = config.get("Devices", "devices_last_device", fallback=self.devices_last_device)
 
     def _param_exists(self, param: str) -> bool:
-        config = configparser.ConfigParser()
-        config.read(self.file_path)
-        return param in config["Settings"]
+        return hasattr(self, param)
 
     def save_param(self, param: str, value):
+        split_param = param.split("::")
+        if len(split_param) == 2:
+            section, param = split_param
+        else:
+            raise ValueError(f"Invalid parameter format: {param}")
+
         if not self._param_exists(param):
-            raise ValueError(f"Parameter {param} does not exist in settings file.")
+            raise ValueError(f"Parameter {param} does not exist in settings.")
+
+        setattr(self, param, value)
 
         config = configparser.ConfigParser()
         config.read(self.file_path)
-        config["Settings"][param] = str(value)
+        # if section does not exist, create it
+        if section not in config:
+            config[section] = {}
+        config[section][param] = str(value)
+
         with open(self.file_path, "w", encoding="utf-8") as configfile:
             config.write(configfile)
 
@@ -67,26 +77,26 @@ class AppSettings:
         config.read(self.file_path)
 
         config["General"] = {
-            "last_path": self.g_last_path,
-            "window_height": self.g_window_height,
-            "window_width": self.g_window_width,
+            "g_last_path": self.g_last_path,
+            "g_window_height": self.g_window_height,
+            "g_window_width": self.g_window_width,
         }
 
         config["ImageViewer"] = {
-            "line_color": self.iw_line_color,
-            "point_color": self.iw_point_color,
-            "text_color": self.iw_text_color,
-            "line_height": self.iw_line_height,
-            "point_size": self.iw_point_size,
-            "text_size": self.iw_text_size,
-            "save_points": self.iw_save_points,
-            "save_lines": self.iw_save_lines,
-            "save_distance": self.iw_save_distance,
-            "auto_diameter": self.iw_auto_diameter,
-            "auto_crop": self.iw_auto_crop,
+            "iw_line_color": self.iw_line_color,
+            "iw_point_color": self.iw_point_color,
+            "iw_text_color": self.iw_text_color,
+            "iw_line_height": self.iw_line_height,
+            "iw_point_size": self.iw_point_size,
+            "iw_text_size": self.iw_text_size,
+            "iw_save_points": self.iw_save_points,
+            "iw_save_lines": self.iw_save_lines,
+            "iw_save_distance": self.iw_save_distance,
+            "iw_auto_diameter": self.iw_auto_diameter,
+            "iw_auto_crop": self.iw_auto_crop,
         }
 
-        config["Devices"] = {"last_device": self.devices_last_device}
+        config["Devices"] = {"devices_last_device": self.devices_last_device}
 
         with open(self.file_path, "w", encoding="utf-8") as configfile:
             config.write(configfile)

@@ -37,6 +37,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.sBoxLineHeight.valueChanged.connect(self.changeLineHeight)
         self.sBoxPointSize.valueChanged.connect(self.changePointSize)
         self.sBoxTextSize.valueChanged.connect(self.changeTextSize)
+
+        self.checkBoxAutoCrop.stateChanged.connect(
+            lambda: self.settings.save_param("ImageViewer::iw_auto_crop", self.checkBoxAutoCrop.isChecked())
+        )
+        self.checkBoxAutoFovPx.stateChanged.connect(
+            lambda: self.settings.save_param("ImageViewer::iw_auto_diameter", self.checkBoxAutoFovPx.isChecked())
+        )
+        self.checkBoxSavePoints.stateChanged.connect(
+            lambda: self.settings.save_param("ImageViewer::iw_save_points", self.checkBoxSavePoints.isChecked())
+        )
+        self.checkBoxSaveLines.stateChanged.connect(
+            lambda: self.settings.save_param("ImageViewer::iw_save_lines", self.checkBoxSaveLines.isChecked())
+        )
+        self.checkBoxSaveDistance.stateChanged.connect(
+            lambda: self.settings.save_param("ImageViewer::iw_save_distance", self.checkBoxSaveDistance.isChecked())
+        )
+
         self.toolBtnSetFovPx.setCheckable(True)
         self.toolBtnSetFovPx.clicked.connect(lambda: self.imageViewer.setPovMode(self.toolBtnSetFovPx.isChecked()))
         if self.devices:
