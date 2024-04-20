@@ -42,6 +42,11 @@ class ImageViewer(QGraphicsView):
         self._spacePressed: bool = False
         self._pov_mode: bool = False
 
+        # Field of view (FOV) drawing
+        self._is_fov_drawing = False
+        self._fov_start_point = None
+        self._fov_end_point = None
+
         # Keep track of points, lines, distances, and distance texts
         self.points: list = []
         self.lines: list = []
@@ -82,16 +87,40 @@ class ImageViewer(QGraphicsView):
         else:
             if not self.pixmap_item:
                 raise ValueError("Please load an image first.")
-            if not self._pov_mode and (
-                try_float(self.mainWindow.lineEditFovPx.text()) <= 0
-                or try_float(self.mainWindow.lineEditFovUm.text()) <= 0
-            ):
-                raise ValueError("Please enter a valid field of view value.")
+            if not self._pov_mode:
+                try:
+                    _ = self._validateFov_Fields()
+                except ValueError as e:
+                    QMessageBox.warning(self, "Error", str(e))
+                    return
+            else:
+                if not len(self.points) % 2:
+                    # if self._pov_mode then clear the scene every two points
+                    self.clear(remove_circle=True)
+                    self._fov_start_point = self.mapToScene(event.pos())
+                    self._is_fov_drawing = True
+                    self.setMouseTracking(True)
+                else:
+                    self._is_fov_drawing = False
+                    self.setMouseTracking(False)
+
             pos = self.mapToScene(event.pos())
             self.addPoint(pos)
             super().mousePressEvent(event)
 
+    def _validateFov_Fields(self) -> tuple[float, float]:
+        fov_px = try_float(self.mainWindow.lineEditFovPx.text())
+        fov_um = try_float(self.mainWindow.lineEditFovUm.text())
+        if not fov_px or fov_px <= 0:
+            raise ValueError("Field of view in pixels must be a positive number.")
+        if not fov_um or fov_um <= 0:
+            raise ValueError("Field of view in micrometers must be a positive number.")
+        return fov_px, fov_um
+
     def mouseMoveEvent(self, event: QMouseEvent):
+        if self._is_fov_drawing:
+            self._fov_end_point = self.mapToScene(event.pos())
+            self._draw_fov()
         if self._isPanning:
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - (event.x() - self._panStartX))
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - (event.y() - self._panStartY))
@@ -113,7 +142,7 @@ class ImageViewer(QGraphicsView):
         if event.key() == Qt.Key_Space:
             self._spacePressed = True
             event.accept()
-        elif event.key() == Qt.Key_Z and event.modifiers() & Qt.ControlModifier:
+        elif (event.key() == Qt.Key_Z and event.modifiers() & Qt.ControlModifier) or event.key() == Qt.Key_Delete:
             # Undo twice to remove last point and line
             self.undo()
             self.undo()
@@ -121,6 +150,9 @@ class ImageViewer(QGraphicsView):
             # Redo twice to add back last point and line
             self.redo()
             self.redo()
+        elif event.key() == Qt.Key_Escape:
+            if self._pov_mode:
+                self.clear(remove_circle=True)
         else:
             super().keyPressEvent(event)
 
@@ -220,24 +252,23 @@ class ImageViewer(QGraphicsView):
 
     def undo(self):
         if self.undoStack:
-            action = self.undoStack.pop()
-            if action[0] == "point":
-                # Undo add point
-                self.scene.removeItem(action[1])
-                self.points.remove(action[1])
-            elif action[0] == "line":
-                # Undo draw line
-                self.scene.removeItem(action[1])  # Remove line
-                self.scene.removeItem(action[2])  # Remove distance text
-                self.lines.remove(action[1])
-                self.distanceTexts.remove(action[2])
-                self.distances.remove(action[3])
-                if not self._pov_mode:
+            if self._pov_mode:
+                self.clear(remove_circle=True)
+            else:
+                action = self.undoStack.pop()
+                if action[0] == "point":
+                    # Undo add point
+                    self.scene.removeItem(action[1])
+                    self.points.remove(action[1])
+                elif action[0] == "line":
+                    # Undo draw line
+                    self.scene.removeItem(action[1])  # Remove line
+                    self.scene.removeItem(action[2])  # Remove distance text
+                    self.lines.remove(action[1])
+                    self.distanceTexts.remove(action[2])
+                    self.distances.remove(action[3])
                     self._setTotalDistance(self.totalDistance - action[3])
-                elif self.fovCircle:
-                    self.scene.removeItem(self.fovCircle)
-                    self.fovCircle = None
-            self.redoStack.append(action)
+                self.redoStack.append(action)
 
     def redo(self):
         if self.redoStack:
@@ -291,7 +322,7 @@ class ImageViewer(QGraphicsView):
             for distanceText in self.distanceTexts:
                 self.scene.addItem(distanceText)
 
-    def clear(self, remove_image: bool = False):
+    def clear(self, remove_image: bool = False, remove_circle: bool = False):
         if remove_image:
             self.pixmap_item = None
             self.scene.clear()
@@ -302,7 +333,11 @@ class ImageViewer(QGraphicsView):
                 self.scene.removeItem(line)
             for distanceText in self.distanceTexts:
                 self.scene.removeItem(distanceText)
-        self.fovCircle = None
+        if remove_circle and self.fovCircle:
+            self.scene.removeItem(self.fovCircle)
+            self.fovCircle = None
+        self._fov_start_point = None
+        self._fov_end_point = None
         self.points.clear()
         self.lines.clear()
         self.distances.clear()
@@ -337,6 +372,36 @@ class ImageViewer(QGraphicsView):
                     )
             except Exception as e:
                 QMessageBox.warning(self, "Error", str(e))
+
+    def _draw_fov(self):
+        # Remove last line and circle if they exist
+        if self.lines:
+            self.scene.removeItem(self.lines[-1])
+            self.lines.pop()
+        if self.fovCircle:
+            self.scene.removeItem(self.fovCircle)
+            self.fovCircle = None
+        if self.distanceTexts:
+            self.scene.removeItem(self.distanceTexts[-1])
+            self.distanceTexts.pop()
+
+        # Draw line and circle based on the last two points
+        if self._fov_start_point and self._fov_end_point:
+            lastPoint = self._fov_end_point
+            secondLastPoint = self._fov_start_point
+            lineItem = self.scene.addLine(
+                lastPoint.x(),
+                lastPoint.y(),
+                secondLastPoint.x(),
+                secondLastPoint.y(),
+                QPen(self.lineColor, self.lineHeight),
+            )
+            self.lines.append(lineItem)
+
+            distance = self._calcDistancePx(lastPoint, secondLastPoint)
+            self._setlineEditFovPxText(distance)
+            self._drawFovCircle(lastPoint.x() - distance / 2, lastPoint.y(), distance)
+            _ = self._drawDistanceText(distance, lastPoint, secondLastPoint)
 
     def _tryAutoSetFovPx(self, diameter: float = 0, x: int = 0, y: int = 0):
         """Set field of view in pixels and draw circle."""
