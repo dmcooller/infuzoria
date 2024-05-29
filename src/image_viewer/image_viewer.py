@@ -222,7 +222,7 @@ class ImageViewer(QGraphicsView):
             # For normal mode, calculate distance in micrometers
             distance = self._calcDistanceUm(lastPoint, secondLastPoint)
             # Update total distance in the UI
-            self._setTotalDistance(distance)
+            self._setTotalDistance(self.totalDistance + distance)
         self.distances.append(distance)
 
         distanceText = self._drawDistanceText(distance, lastPoint, secondLastPoint)
