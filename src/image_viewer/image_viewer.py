@@ -372,8 +372,7 @@ class ImageViewer(QGraphicsView):
 
     def _clear(self, remove_image: bool = False, remove_circle: bool = False):
         if remove_circle and self.fovCircle:
-            self.scene.removeItem(self.fovCircle)
-            self.fovCircle = None
+            self._removeFovCircle()
         if remove_image:
             self.pixmap_item = None
             self.scene.clear()
@@ -426,8 +425,7 @@ class ImageViewer(QGraphicsView):
             self.scene.removeItem(self.lines[-1])
             self.lines.pop()
         if self.fovCircle:
-            self.scene.removeItem(self.fovCircle)
-            self.fovCircle = None
+            self._removeFovCircle()
         if self.distanceTexts:
             self.scene.removeItem(self.distanceTexts[-1])
             self.distanceTexts.pop()
@@ -490,9 +488,7 @@ class ImageViewer(QGraphicsView):
         self.mainWindow.lineEditFovPx.setText(f"{distance:.2f}")
 
     def _drawFovCircle(self, x: int, y: int, diameter: float):
-        if self.fovCircle:
-            # Remove previous circle if it exists
-            self.scene.removeItem(self.fovCircle)
+        self._removeFovCircle()
 
         circle = self.scene.addEllipse(
             x - diameter / 2,
@@ -510,3 +506,11 @@ class ImageViewer(QGraphicsView):
             index = self.mainWindow.comboBoxDeviceZoom.findText(zoom)
             if index != -1:
                 self.mainWindow.comboBoxDeviceZoom.setCurrentIndex(index)
+
+    def _removeFovCircle(self):
+        try:
+            self.scene.removeItem(self.fovCircle)
+        except Exception:
+            pass
+        finally:
+            self.fovCircle = None
