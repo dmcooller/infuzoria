@@ -2,7 +2,7 @@ import os
 import sys
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QColor, QDoubleValidator, QScreen
+from PySide6.QtGui import QColor, QDoubleValidator, QKeySequence, QScreen, QShortcut
 from PySide6.QtWidgets import QApplication, QColorDialog, QFileDialog, QMessageBox
 
 from devices import Devices
@@ -64,6 +64,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.lineEditFovPx.setValidator(doubleValidator)
         self.lineEditFovUm.setValidator(doubleValidator)
 
+        self.addShortcuts()
         self.setUiValues()
 
     def setupImageViewer(self):
@@ -71,6 +72,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         placeholder = self.findChild(QtWidgets.QWidget, "graphicsViewPlaceholder")
         layout = QtWidgets.QVBoxLayout(placeholder)
         layout.addWidget(self.imageViewer)
+
+    def addShortcuts(self):
+        # Add shortcuts for the image viewer actions
+        undoShortcut = QShortcut(QKeySequence("Ctrl+Z"), self)
+        undoShortcut.activated.connect(self.imageViewer.undoTwice)
+
+        redoShortcut = QShortcut(QKeySequence("Ctrl+Y"), self)
+        redoShortcut.activated.connect(self.imageViewer.redoTwice)
+
+        clearDrawingShortcut = QShortcut(QKeySequence("Ctrl+D"), self)
+        clearDrawingShortcut.activated.connect(self.imageViewer.clearDrawing)
 
     def saveImage(self):
         savePath, _ = QFileDialog.getSaveFileName(
@@ -80,9 +92,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.imageViewer.saveImageWithAnnotations(savePath)
 
     def loadImage(self):
-        filePath, _ = QFileDialog.getOpenFileName(
-            self, "Open Image", self.settings.g_last_path, "Images (*.png *.xpm *.jpg)"
-        )
+        filePath, _ = QFileDialog.getOpenFileName(self, "Open Image", self.settings.g_last_path, "Images (*.png *.jpg)")
         if filePath:
             self.imageViewer.setNewImage(filePath)
             self.settings.g_last_path = os.path.dirname(filePath)

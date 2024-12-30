@@ -2,10 +2,13 @@ import math
 
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import (
+    QAction,
     QColor,
+    QContextMenuEvent,
     QFont,
     QImage,
     QKeyEvent,
+    QKeySequence,
     QMouseEvent,
     QPainter,
     QPen,
@@ -16,6 +19,7 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsTextItem,
     QGraphicsView,
+    QMenu,
     QMessageBox,
 )
 
@@ -69,6 +73,44 @@ class ImageViewer(QGraphicsView):
 
         self.pixmap_item = None  # Image item
 
+        # Actions
+        self.undoAction = self._createUndoAction()
+        self.redoAction = self._createRedoAction()
+        self.clearAllAction = self._createClearAllAction()
+        self.clearDrawAction = self._createClearDrawAction()
+
+    def contextMenuEvent(self, event: QContextMenuEvent):
+        context_menu = QMenu(self)
+        context_menu.addAction(self.clearDrawAction)
+        context_menu.addAction(self.clearAllAction)
+        context_menu.addSeparator()
+        context_menu.addAction(self.undoAction)
+        context_menu.addAction(self.redoAction)
+
+        _ = context_menu.exec(event.globalPos())
+
+    def _createClearAllAction(self) -> QAction:
+        a = QAction("Clear All", self)
+        a.triggered.connect(lambda: self._clear(remove_image=True, remove_circle=True))
+        return a
+
+    def _createClearDrawAction(self) -> QAction:
+        a = QAction("Clear Drawing", self)
+        a.triggered.connect(lambda: self.clearDrawing())
+        return a
+
+    def _createUndoAction(self) -> QAction:
+        a = QAction("Undo", self)
+        # Undo twice to remove last point and line
+        a.triggered.connect(self.undoTwice)
+        return a
+
+    def _createRedoAction(self) -> QAction:
+        a = QAction("Redo", self)
+        # Redo twice to add back last point and line
+        a.triggered.connect(self.redoTwice)
+        return a
+
     def wheelEvent(self, event):
         factor = 1.1
         if event.angleDelta().y() < 0:
@@ -76,37 +118,38 @@ class ImageViewer(QGraphicsView):
         self.scale(factor, factor)
 
     def mousePressEvent(self, event: QMouseEvent):
-        # Pan image if space bar is pressed
-        if self._spacePressed and event.button() == Qt.LeftButton:
-            self._isPanning = True
-            self._panStartX = event.x()
-            self._panStartY = event.y()
-            self.setCursor(Qt.ClosedHandCursor)
-            event.accept()
-        # Add point if left click
-        else:
-            if not self.pixmap_item:
-                raise ValueError("Please load an image first.")
-            if not self._pov_mode:
-                try:
-                    _ = self._validateFov_Fields()
-                except ValueError as e:
-                    QMessageBox.warning(self, "Error", str(e))
-                    return
+        if event.button() == Qt.LeftButton:
+            # Pan image if space bar is pressed
+            if self._spacePressed:
+                self._isPanning = True
+                self._panStartX = event.x()
+                self._panStartY = event.y()
+                self.setCursor(Qt.ClosedHandCursor)
+                event.accept()
+            # Add point if left click
             else:
-                if not len(self.points) % 2:
-                    # if self._pov_mode then clear the scene every two points
-                    self.clear(remove_circle=True)
-                    self._fov_start_point = self.mapToScene(event.pos())
-                    self._is_fov_drawing = True
-                    self.setMouseTracking(True)
+                if not self.pixmap_item:
+                    raise ValueError("Please load an image first.")
+                if not self._pov_mode:
+                    try:
+                        _ = self._validateFov_Fields()
+                    except ValueError as e:
+                        QMessageBox.warning(self, "Error", str(e))
+                        return
                 else:
-                    self._is_fov_drawing = False
-                    self.setMouseTracking(False)
+                    if not len(self.points) % 2:
+                        # if self._pov_mode then clear the scene every two points
+                        self._clear(remove_circle=True)
+                        self._fov_start_point = self.mapToScene(event.pos())
+                        self._is_fov_drawing = True
+                        self.setMouseTracking(True)
+                    else:
+                        self._is_fov_drawing = False
+                        self.setMouseTracking(False)
 
-            pos = self.mapToScene(event.pos())
-            self.addPoint(pos)
-            super().mousePressEvent(event)
+                pos = self.mapToScene(event.pos())
+                self._addPoint(pos)
+                super().mousePressEvent(event)
 
     def _validateFov_Fields(self) -> tuple[float, float]:
         fov_px = try_float(self.mainWindow.lineEditFovPx.text())
@@ -142,17 +185,9 @@ class ImageViewer(QGraphicsView):
         if event.key() == Qt.Key_Space:
             self._spacePressed = True
             event.accept()
-        elif (event.key() == Qt.Key_Z and event.modifiers() & Qt.ControlModifier) or event.key() == Qt.Key_Delete:
-            # Undo twice to remove last point and line
-            self.undo()
-            self.undo()
-        elif event.key() == Qt.Key_Y and event.modifiers() & Qt.ControlModifier:
-            # Redo twice to add back last point and line
-            self.redo()
-            self.redo()
         elif event.key() == Qt.Key_Escape:
             if self._pov_mode:
-                self.clear(remove_circle=True)
+                self._clear(remove_circle=True)
         else:
             super().keyPressEvent(event)
 
@@ -166,23 +201,23 @@ class ImageViewer(QGraphicsView):
     def setPovMode(self, pov_mode: bool):
         self._pov_mode = pov_mode
         if not pov_mode:
-            self.clear(remove_image=False)
+            self._clear(remove_image=False)
             self.mainWindow.statusbar.showMessage("POV mode disabled")
         else:
             self.mainWindow.statusbar.showMessage("POV mode enabled")
 
     def setNewImage(self, image_path: str):
-        self.clear(remove_image=True)
+        self._clear(remove_image=True)
         self.pixmap_item = QGraphicsPixmapItem(QPixmap(image_path))
         self.scene.addItem(self.pixmap_item)
         self.setScene(self.scene)
         self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
-        self.imgAutoHelpers()
+        self._imgAutoHelpers()
         self._tryAutoSetZoomFromFileName(image_path)
         self.setFocus()
         self.mainWindow.statusbar.showMessage(f"Image loaded: {image_path}")
 
-    def addPoint(self, pos):
+    def _addPoint(self, pos):
         if not self._spacePressed:
             # Create a circle to represent the point
             pointItem = self.scene.addEllipse(
@@ -196,11 +231,11 @@ class ImageViewer(QGraphicsView):
             self.points.append(pointItem)
             if len(self.points) > 1:
                 # Draw line and calculate distance if it's not the first point
-                self.drawLineAndCalculateDistance()
+                self._drawLineAndCalculateDistance()
             # Record this action
             self.undoStack.append(("point", pointItem))
 
-    def drawLineAndCalculateDistance(self):
+    def _drawLineAndCalculateDistance(self):
         lastPoint = self.points[-1].rect().center()
         secondLastPoint = self.points[-2].rect().center()
         lineItem = self.scene.addLine(
@@ -253,7 +288,7 @@ class ImageViewer(QGraphicsView):
     def undo(self):
         if self.undoStack:
             if self._pov_mode:
-                self.clear(remove_circle=True)
+                self._clear(remove_circle=True)
             else:
                 action = self.undoStack.pop()
                 if action[0] == "point":
@@ -269,6 +304,11 @@ class ImageViewer(QGraphicsView):
                     self.distances.remove(action[3])
                     self._setTotalDistance(self.totalDistance - action[3])
                 self.redoStack.append(action)
+
+    def undoTwice(self):
+        """Undo twice to remove last point and line."""
+        self.undo()
+        self.undo()
 
     def redo(self):
         if self.redoStack:
@@ -287,6 +327,11 @@ class ImageViewer(QGraphicsView):
                 if not self._pov_mode:
                     self._setTotalDistance(self.totalDistance + action[3])
             self.undoStack.append(action)
+
+    def redoTwice(self):
+        """Redo twice to add back last point and line."""
+        self.redo()
+        self.redo()
 
     def saveImageWithAnnotations(self, savePath: str):
         # Temporarily remove items not to be saved if necessary
@@ -322,7 +367,13 @@ class ImageViewer(QGraphicsView):
             for distanceText in self.distanceTexts:
                 self.scene.addItem(distanceText)
 
-    def clear(self, remove_image: bool = False, remove_circle: bool = False):
+    def clearDrawing(self):
+        self._clear(remove_image=False)
+
+    def _clear(self, remove_image: bool = False, remove_circle: bool = False):
+        if remove_circle and self.fovCircle:
+            self.scene.removeItem(self.fovCircle)
+            self.fovCircle = None
         if remove_image:
             self.pixmap_item = None
             self.scene.clear()
@@ -333,9 +384,6 @@ class ImageViewer(QGraphicsView):
                 self.scene.removeItem(line)
             for distanceText in self.distanceTexts:
                 self.scene.removeItem(distanceText)
-        if remove_circle and self.fovCircle:
-            self.scene.removeItem(self.fovCircle)
-            self.fovCircle = None
         self._fov_start_point = None
         self._fov_end_point = None
         self.points.clear()
@@ -346,9 +394,8 @@ class ImageViewer(QGraphicsView):
         self.undoStack.clear()
         self.redoStack.clear()
 
-    def imgAutoHelpers(self):
+    def _imgAutoHelpers(self):
         """Automatically set FOV (px) and crop image if enabled."""
-        # Auto set FOV (px) if enabled or auto crop if enabled
         if (
             self.mainWindow.checkBoxAutoFovPx.isChecked() or self.mainWindow.checkBoxAutoCrop.isChecked()
         ) and not self._pov_mode:
