@@ -130,6 +130,12 @@ class ImageViewer(QGraphicsView):
             else:
                 if not self.pixmap_item:
                     raise ValueError("Please load an image first.")
+
+                # Get scene position and check if it's within image bounds
+                pos = self.mapToScene(event.pos())
+                if not self._isPointInImage(pos):
+                    return
+
                 if not self._pov_mode:
                     try:
                         _ = self._validateFov_Fields()
@@ -139,17 +145,25 @@ class ImageViewer(QGraphicsView):
                 else:
                     if not len(self.points) % 2:
                         # if self._pov_mode then clear the scene every two points
-                        self._clear(remove_circle=True)
-                        self._fov_start_point = self.mapToScene(event.pos())
+                        self.clear(remove_circle=True)
+                        self._fov_start_point = pos
                         self._is_fov_drawing = True
                         self.setMouseTracking(True)
                     else:
                         self._is_fov_drawing = False
                         self.setMouseTracking(False)
 
-                pos = self.mapToScene(event.pos())
                 self._addPoint(pos)
                 super().mousePressEvent(event)
+
+    def _isPointInImage(self, pos: QPointF) -> bool:
+        """Check if the given point is within the image boundaries."""
+        if not self.pixmap_item:
+            return False
+
+        # Get image bounds
+        rect = self.pixmap_item.boundingRect()
+        return rect.contains(pos)
 
     def _validateFov_Fields(self) -> tuple[float, float]:
         fov_px = try_float(self.mainWindow.lineEditFovPx.text())
