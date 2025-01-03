@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "infusoria"
 version = "0.1.0"
-description = "App to work with microscope images"
+description = "App to work with images taken under a microscope"
 authors = ["dmcooller"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
-pyside6 = "^6.6.2"
-opencv-python-headless = "^4.9.0.80"
+pyside6 = "6.8.1"
+opencv-python-headless = "^4.10.0.84"
 numpy = "^1.26.4"
 
 [tool.poetry.group.dev.dependencies]
