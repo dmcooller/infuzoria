@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'design.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.6.2
+## Created by: Qt User Interface Compiler version 6.8.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -32,7 +32,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.mainLayout = QHBoxLayout()
         self.mainLayout.setObjectName(u"mainLayout")
-        self.mainLayout.setSizeConstraint(QLayout.SetMinAndMaxSize)
+        self.mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetMinAndMaxSize)
         self.graphicsViewPlaceholder = QWidget(self.centralwidget)
         self.graphicsViewPlaceholder.setObjectName(u"graphicsViewPlaceholder")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -40,20 +40,20 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.graphicsViewPlaceholder.sizePolicy().hasHeightForWidth())
         self.graphicsViewPlaceholder.setSizePolicy(sizePolicy)
-        self.graphicsViewPlaceholder.setCursor(QCursor(Qt.CrossCursor))
+        self.graphicsViewPlaceholder.setCursor(QCursor(Qt.CursorShape.CrossCursor))
 
         self.mainLayout.addWidget(self.graphicsViewPlaceholder)
 
         self.line = QFrame(self.centralwidget)
         self.line.setObjectName(u"line")
-        self.line.setFrameShape(QFrame.VLine)
-        self.line.setFrameShadow(QFrame.Sunken)
+        self.line.setFrameShape(QFrame.Shape.VLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.mainLayout.addWidget(self.line)
 
         self.rightSidebarLayout = QGridLayout()
         self.rightSidebarLayout.setObjectName(u"rightSidebarLayout")
-        self.rightSidebarLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
+        self.rightSidebarLayout.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
         self.rightSidebarLayout.setVerticalSpacing(6)
         self.rightSidebarLayout.setContentsMargins(0, 10, 10, 10)
         self.label_5 = QLabel(self.centralwidget)
@@ -117,8 +117,8 @@ class Ui_MainWindow(object):
 
         self.line_5 = QFrame(self.centralwidget)
         self.line_5.setObjectName(u"line_5")
-        self.line_5.setFrameShape(QFrame.HLine)
-        self.line_5.setFrameShadow(QFrame.Sunken)
+        self.line_5.setFrameShape(QFrame.Shape.HLine)
+        self.line_5.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.rightSidebarLayout.addWidget(self.line_5, 13, 0, 1, 3)
 
@@ -178,8 +178,8 @@ class Ui_MainWindow(object):
 
         self.line_10 = QFrame(self.centralwidget)
         self.line_10.setObjectName(u"line_10")
-        self.line_10.setFrameShape(QFrame.HLine)
-        self.line_10.setFrameShadow(QFrame.Sunken)
+        self.line_10.setFrameShape(QFrame.Shape.HLine)
+        self.line_10.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.rightSidebarLayout.addWidget(self.line_10, 20, 0, 1, 3)
 
@@ -236,7 +236,7 @@ class Ui_MainWindow(object):
         self.pBtnLoadImg.setMinimumSize(QSize(98, 28))
         self.pBtnLoadImg.setFont(font1)
 
-        self.rightSidebarLayout.addWidget(self.pBtnLoadImg, 0, 0, 1, 1, Qt.AlignVCenter)
+        self.rightSidebarLayout.addWidget(self.pBtnLoadImg, 0, 0, 1, 1, Qt.AlignmentFlag.AlignVCenter)
 
         self.lineEditTotalDistance = QLineEdit(self.centralwidget)
         self.lineEditTotalDistance.setObjectName(u"lineEditTotalDistance")
@@ -252,15 +252,15 @@ class Ui_MainWindow(object):
 
         self.line_4 = QFrame(self.centralwidget)
         self.line_4.setObjectName(u"line_4")
-        self.line_4.setFrameShape(QFrame.HLine)
-        self.line_4.setFrameShadow(QFrame.Sunken)
+        self.line_4.setFrameShape(QFrame.Shape.HLine)
+        self.line_4.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.rightSidebarLayout.addWidget(self.line_4, 22, 0, 1, 3)
 
         self.line_3 = QFrame(self.centralwidget)
         self.line_3.setObjectName(u"line_3")
-        self.line_3.setFrameShape(QFrame.HLine)
-        self.line_3.setFrameShadow(QFrame.Sunken)
+        self.line_3.setFrameShape(QFrame.Shape.HLine)
+        self.line_3.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.rightSidebarLayout.addWidget(self.line_3, 9, 0, 1, 3)
 
@@ -270,7 +270,7 @@ class Ui_MainWindow(object):
         self.pBtnChgLineColor.setSizePolicy(sizePolicy4)
         self.pBtnChgLineColor.setFont(font1)
 
-        self.rightSidebarLayout.addWidget(self.pBtnChgLineColor, 2, 0, 1, 1, Qt.AlignVCenter)
+        self.rightSidebarLayout.addWidget(self.pBtnChgLineColor, 2, 0, 1, 1, Qt.AlignmentFlag.AlignVCenter)
 
         self.label_16 = QLabel(self.centralwidget)
         self.label_16.setObjectName(u"label_16")
@@ -282,8 +282,8 @@ class Ui_MainWindow(object):
 
         self.line_2 = QFrame(self.centralwidget)
         self.line_2.setObjectName(u"line_2")
-        self.line_2.setFrameShape(QFrame.HLine)
-        self.line_2.setFrameShadow(QFrame.Sunken)
+        self.line_2.setFrameShape(QFrame.Shape.HLine)
+        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.rightSidebarLayout.addWidget(self.line_2, 1, 0, 1, 3)
 
@@ -293,7 +293,7 @@ class Ui_MainWindow(object):
         self.label_3.setSizePolicy(sizePolicy2)
         self.label_3.setFont(font1)
 
-        self.rightSidebarLayout.addWidget(self.label_3, 4, 0, 1, 1, Qt.AlignBottom)
+        self.rightSidebarLayout.addWidget(self.label_3, 4, 0, 1, 1, Qt.AlignmentFlag.AlignBottom)
 
         self.sBoxLineHeight = QSpinBox(self.centralwidget)
         self.sBoxLineHeight.setObjectName(u"sBoxLineHeight")
@@ -332,7 +332,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1023, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1023, 33))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -368,8 +368,8 @@ class Ui_MainWindow(object):
         self.pBtnSaveImg.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+S", None))
 #endif // QT_CONFIG(shortcut)
         self.checkBoxSavePoints.setText(QCoreApplication.translate("MainWindow", u"Save Points", None))
-        self.checkBoxAutoFovPx.setText(QCoreApplication.translate("MainWindow", u"Autodetect FOV (px)", None))
-        self.checkBoxSaveDistance.setText(QCoreApplication.translate("MainWindow", u"Save Distance", None))
+        self.checkBoxAutoFovPx.setText(QCoreApplication.translate("MainWindow", u"Auto detect FOV (px)", None))
+        self.checkBoxSaveDistance.setText(QCoreApplication.translate("MainWindow", u"Save Length", None))
         self.label_6.setText(QCoreApplication.translate("MainWindow", u"FOV (px):", None))
         self.label_7.setText(QCoreApplication.translate("MainWindow", u"Text Size:", None))
         self.pBtnLoadImg.setText(QCoreApplication.translate("MainWindow", u"Load image", None))
@@ -378,9 +378,9 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(shortcut)
         self.pBtnChgLineColor.setText(QCoreApplication.translate("MainWindow", u"Line color", None))
         self.label_16.setText(QCoreApplication.translate("MainWindow", u"Zoom:", None))
-        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Line height:", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Line width:", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Length (\u03bcm):", None))
         self.label_8.setText(QCoreApplication.translate("MainWindow", u"Device:", None))
-        self.checkBoxAutoCrop.setText(QCoreApplication.translate("MainWindow", u"Autocrop", None))
+        self.checkBoxAutoCrop.setText(QCoreApplication.translate("MainWindow", u"Auto Crop", None))
     # retranslateUi
 

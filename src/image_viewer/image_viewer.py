@@ -145,7 +145,7 @@ class ImageViewer(QGraphicsView):
                 else:
                     if not len(self.points) % 2:
                         # if self._pov_mode then clear the scene every two points
-                        self.clear(remove_circle=True)
+                        self._clear(remove_circle=True)
                         self._fov_start_point = pos
                         self._is_fov_drawing = True
                         self.setMouseTracking(True)
@@ -438,8 +438,6 @@ class ImageViewer(QGraphicsView):
         if self.lines:
             self.scene.removeItem(self.lines[-1])
             self.lines.pop()
-        if self.fovCircle:
-            self._removeFovCircle()
         if self.distanceTexts:
             self.scene.removeItem(self.distanceTexts[-1])
             self.distanceTexts.pop()
@@ -522,9 +520,11 @@ class ImageViewer(QGraphicsView):
                 self.mainWindow.comboBoxDeviceZoom.setCurrentIndex(index)
 
     def _removeFovCircle(self):
-        try:
-            self.scene.removeItem(self.fovCircle)
-        except Exception:
-            pass
-        finally:
-            self.fovCircle = None
+        # Check if the circle exists before removing it
+        if self.fovCircle in self.scene.items():
+            try:
+                self.scene.removeItem(self.fovCircle)
+            except Exception:
+                pass
+            finally:
+                self.fovCircle = None
